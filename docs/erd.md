@@ -166,3 +166,23 @@ Fields:
 - password_hash
 - role
 - created_at
+
+
+## Customer Access Token
+
+Used for secure customer portal access.
+
+Fields:
+
+- id
+- customer_id
+- token
+- expires_at
+- is_active
+- created_at
+
+Purpose:
+
+Allows customers to access measurements,
+appointments and garment tracking without
+creating an account.
