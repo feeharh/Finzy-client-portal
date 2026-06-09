@@ -13,6 +13,9 @@ Goals:
 - View appointment status
 - Access measurements
 - Receive updates
+- Add approved appointments to personal calendar
+- Receive calendar invite or calendar link after appointment approval
+- Communicate through WhatsApp when more information is needed
 
 Pain Points:
 
@@ -33,6 +36,9 @@ Goals:
 - Store measurements
 - Communicate with customers
 - Maintain customer history
+- Request additional information from customers through WhatsApp
+- Send pre-filled WhatsApp messages linked to an appointment
+- Log WhatsApp communication notes under the appointment
 
 Pain Points:
 
@@ -161,6 +167,47 @@ The system shall support:
 - READY_FOR_PICKUP
 - COMPLETED
 - CANCELLED
+
+---
+
+### Calendar Integration
+
+The system shall allow customers to add approved appointments to their personal calendars.
+
+Supported options may include:
+
+- Google Calendar link
+- Apple Calendar file
+- Outlook Calendar link
+- Downloadable `.ics` calendar file
+
+Calendar event details should include:
+
+- Appointment date
+- Appointment time
+- Business name
+- Business address
+- Appointment type
+- Notes or preparation instructions
+  
+---
+
+### WhatsApp Communication
+
+The system shall allow administrators to communicate with customers through WhatsApp.
+
+MVP support:
+
+- Store customer WhatsApp number
+- Open WhatsApp chat from appointment details
+- Generate pre-filled WhatsApp message
+- Log communication notes manually
+
+Future support:
+
+- WhatsApp Business API integration
+- Two-way messaging inside dashboard
+- Automated WhatsApp notifications
 
 ---
 
