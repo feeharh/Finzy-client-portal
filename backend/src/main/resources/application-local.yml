@@ -1,0 +1,17 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/finzy_portal
+    username: finzy
+    password: finzy_dev_password
+  mail:
+    host: localhost
+    port: 1025
+
+logging:
+  level:
+    com.finzyportal: DEBUG
+    org.springframework.security: INFO
+
+finzy:
+  cors:
+    allowed-origins: http://localhost:3000

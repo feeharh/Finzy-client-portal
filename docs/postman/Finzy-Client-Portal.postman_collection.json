@@ -1,0 +1,1102 @@
+{
+  "info": {
+    "_postman_id": "finzy-client-portal-api",
+    "name": "Finzy Client Portal API",
+    "description": "REST API collection for the Finzy Client Portal.\n\n## Setup\n1. Import `Finzy-Client-Portal.postman_environment.json`\n2. Select the **Finzy Client Portal — Local** environment\n3. Start backend: `cd backend && mvn spring-boot:run`\n4. Start Docker Postgres: `cd infrastructure && docker compose up -d`\n\n## Auth\n- **Public:** no auth\n- **Portal:** set `portalToken` env var (auto-set after Submit Appointment when implemented)\n- **Admin:** run **Login** first — Postman stores the session cookie automatically\n\n## Status\nPhase 1: only **Health Check** is live. Other requests are ready for Phase 2–5 implementation.\n\nSee [api-spec.md](../api-spec.md) for full documentation.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080/api/v1"
+    }
+  ],
+  "item": [
+    {
+      "name": "System",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "Phase 1 — implemented. Returns service status."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "description": "No authentication required.",
+      "item": [
+        {
+          "name": "Submit Appointment (Shopify shape)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.appointmentId) {",
+                  "        pm.environment.set('appointmentId', json.appointmentId);",
+                  "    }",
+                  "    if (json.portalUrl) {",
+                  "        const parts = json.portalUrl.split('/portal/');",
+                  "        if (parts[1]) pm.environment.set('portalToken', parts[1]);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"firstName\": \"Sarah\",\n    \"lastName\": \"Johnson\",\n    \"email\": \"sarah@example.com\",\n    \"phoneNumber\": \"+1234567890\",\n    \"whatsappNumber\": null,\n    \"preferredCommunicationMethod\": null\n  },\n  \"appointment\": {\n    \"appointmentType\": \"ALTERATION_CONSULTATION\",\n    \"preferredStartAt\": null,\n    \"preferredCompletionDate\": \"2026-09-15\",\n    \"serviceDescription\": null,\n    \"rushServiceRequested\": false,\n    \"customerNotes\": null\n  },\n  \"garments\": [\n    {\n      \"garmentType\": \"DRESS\",\n      \"description\": null,\n      \"color\": null,\n      \"brand\": null,\n      \"sizeLabel\": null,\n      \"customerNotes\": \"Need 1 inch hem, bringing shoes for length reference\",\n      \"alterations\": [\n        {\n          \"alterationType\": \"HEMMING\",\n          \"description\": null\n        }\n      ],\n      \"fileAssetIds\": []\n    }\n  ],\n  \"policyAgreements\": [\n    {\n      \"policyName\": \"Finzy Alterations Policies & Terms\",\n      \"policyVersion\": \"1.0\",\n      \"agreed\": true\n    },\n    {\n      \"policyName\": \"Garment Inspection Acknowledgement\",\n      \"policyVersion\": \"1.0\",\n      \"agreed\": true\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/public/appointments",
+            "description": "Option B request shape. Matches Shopify form fields. Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Appointment (multi-garment)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customer\": {\n    \"firstName\": \"Sarah\",\n    \"lastName\": \"Johnson\",\n    \"email\": \"sarah@example.com\",\n    \"phoneNumber\": \"+1234567890\",\n    \"whatsappNumber\": \"+1234567890\",\n    \"preferredCommunicationMethod\": \"WHATSAPP\"\n  },\n  \"appointment\": {\n    \"appointmentType\": \"GARMENT_DROP_OFF\",\n    \"preferredStartAt\": \"2026-08-15T14:00:00Z\",\n    \"preferredCompletionDate\": \"2026-09-01\",\n    \"serviceDescription\": \"Two dresses for hemming\",\n    \"rushServiceRequested\": true,\n    \"customerNotes\": \"Need both before wedding on Sept 5\"\n  },\n  \"garments\": [\n    {\n      \"garmentType\": \"DRESS\",\n      \"description\": \"Blue midi dress\",\n      \"color\": \"Navy\",\n      \"customerNotes\": \"1 inch hem\",\n      \"alterations\": [{ \"alterationType\": \"HEMMING\", \"description\": \"1 inch hem\" }],\n      \"fileAssetIds\": []\n    },\n    {\n      \"garmentType\": \"WEDDING_DRESS\",\n      \"description\": \"Ivory lace gown\",\n      \"color\": \"Ivory\",\n      \"customerNotes\": \"Bustle needed\",\n      \"alterations\": [{ \"alterationType\": \"ADD_BUSTLE\", \"description\": \"American bustle\" }],\n      \"fileAssetIds\": []\n    }\n  ],\n  \"policyAgreements\": [\n    { \"policyName\": \"Finzy Alterations Policies & Terms\", \"policyVersion\": \"1.0\", \"agreed\": true },\n    { \"policyName\": \"Garment Inspection Acknowledgement\", \"policyVersion\": \"1.0\", \"agreed\": true }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/public/appointments",
+            "description": "Portal /book form with multiple garments. Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "List Appointment Types",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/appointment-types",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "List Policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/public/policies",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Presign File Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"dress-front.jpg\",\n  \"mimeType\": \"image/jpeg\",\n  \"fileSizeBytes\": 2048000,\n  \"resourceType\": \"GARMENT_PHOTO\"\n}"
+            },
+            "url": "{{baseUrl}}/public/files/presign",
+            "description": "Phase 4."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Portal",
+      "description": "Requires `X-Portal-Token` header. Set `portalToken` in environment.",
+      "auth": {
+        "type": "apikey",
+        "apikey": [
+          {
+            "key": "key",
+            "value": "X-Portal-Token",
+            "type": "string"
+          },
+          {
+            "key": "value",
+            "value": "{{portalToken}}",
+            "type": "string"
+          },
+          {
+            "key": "in",
+            "value": "header",
+            "type": "string"
+          }
+        ]
+      },
+      "item": [
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/profile",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "List Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/portal/appointments?page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["portal", "appointments"],
+              "query": [
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/appointments/{{appointmentId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment Status History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/appointments/{{appointmentId}}/status-history",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "List Measurements",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/measurements",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Measurement Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/measurements/{{profileId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "List Quotes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/quotes",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Quote Detail",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/quotes/{{quoteId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Approved, please proceed.\"\n}"
+            },
+            "url": "{{baseUrl}}/portal/quotes/{{quoteId}}/approve",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Price is too high.\"\n}"
+            },
+            "url": "{{baseUrl}}/portal/quotes/{{quoteId}}/reject",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Google Calendar Link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/appointments/{{appointmentId}}/calendar/google",
+            "description": "Phase 4. Only for APPROVED appointments."
+          },
+          "response": []
+        },
+        {
+          "name": "Download ICS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/portal/appointments/{{appointmentId}}/calendar.ics",
+            "description": "Phase 4. Returns text/calendar."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Auth",
+      "description": "Run Login first. Postman stores FINZY_ADMIN_SESSION cookie automatically for subsequent admin requests.",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/auth/login",
+            "description": "Phase 2."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/auth/logout",
+            "description": "Phase 2."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User (me)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/auth/me",
+            "description": "Phase 2."
+          },
+          "response": []
+        },
+        {
+          "name": "Get CSRF Token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/auth/csrf",
+            "description": "Phase 2."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "item": [
+        {
+          "name": "Dashboard Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/dashboard/summary",
+            "description": "Phase 5."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Customers",
+      "item": [
+        {
+          "name": "List Customers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/customers?q=sarah&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "customers"],
+              "query": [
+                { "key": "q", "value": "sarah" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.environment.set('customerId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"sarah@example.com\",\n  \"phoneNumber\": \"+1234567890\",\n  \"whatsappNumber\": \"+1234567890\",\n  \"preferredCommunicationMethod\": \"WHATSAPP\",\n  \"notes\": null\n}"
+            },
+            "url": "{{baseUrl}}/admin/customers",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Customer",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Sarah\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"sarah.updated@example.com\",\n  \"phoneNumber\": \"+1234567890\",\n  \"whatsappNumber\": \"+1234567890\",\n  \"preferredCommunicationMethod\": \"WHATSAPP\",\n  \"notes\": \"VIP customer\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Customer History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/history",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Portal Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.portalUrl) {",
+                  "        const parts = json.portalUrl.split('/portal/');",
+                  "        if (parts[1]) pm.environment.set('portalToken', parts[1]);",
+                  "    }",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/access-tokens",
+            "description": "Phase 3. Auto-sets portalToken env var."
+          },
+          "response": []
+        },
+        {
+          "name": "Revoke Portal Token",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/access-tokens/{{tokenId}}/revoke",
+            "description": "Phase 3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Appointments",
+      "item": [
+        {
+          "name": "List Appointments",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/appointments?status=REQUEST_SUBMITTED&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "appointments"],
+              "query": [
+                { "key": "status", "value": "REQUEST_SUBMITTED" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Appointment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledStartAt\": \"2026-08-15T14:00:00Z\",\n  \"scheduledEndAt\": \"2026-08-15T15:00:00Z\",\n  \"internalNotes\": \"Confirmed via WhatsApp\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/approve",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Decline Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Schedule fully booked for requested date.\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/decline",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Reschedule Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"scheduledStartAt\": \"2026-08-20T14:00:00Z\",\n  \"scheduledEndAt\": \"2026-08-20T15:00:00Z\",\n  \"note\": \"Customer requested new date.\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/reschedule",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Appointment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Customer cancelled.\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/cancel",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Request Information",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"note\": \"Please send a photo of the shoes you plan to wear.\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/request-information",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Complete Appointment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/complete",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Status History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/status-history",
+            "description": "Phase 3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Garments",
+      "item": [
+        {
+          "name": "List Garments for Appointment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/garments",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Garment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.environment.set('garmentId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garmentType\": \"DRESS\",\n  \"description\": \"Blue midi dress\",\n  \"color\": \"Navy\",\n  \"customerNotes\": \"1 inch hem\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/garments",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Garment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/garments/{{garmentId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Garment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garmentType\": \"DRESS\",\n  \"description\": \"Blue midi dress — updated\",\n  \"color\": \"Navy\",\n  \"brand\": \"Zara\",\n  \"sizeLabel\": \"M\",\n  \"customerNotes\": \"1 inch hem\",\n  \"internalNotes\": \"Check lining before hemming\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/garments/{{garmentId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Garment Status",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"newStatus\": \"READY_FOR_PICKUP\",\n  \"note\": \"Pressed and bagged\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/garments/{{garmentId}}/status",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Garment Status History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/garments/{{garmentId}}/status-history",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Add Alteration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.environment.set('alterationId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alterationType\": \"HEMMING\",\n  \"description\": \"1 inch hem\",\n  \"unitPrice\": 45.00\n}"
+            },
+            "url": "{{baseUrl}}/admin/garments/{{garmentId}}/alterations",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Alteration",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"alterationType\": \"HEMMING\",\n  \"description\": \"1 inch hem with lining\",\n  \"unitPrice\": 55.00,\n  \"status\": \"QUOTED\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/alterations/{{alterationId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Measurements",
+      "item": [
+        {
+          "name": "List Measurement Profiles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/measurements",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Measurement Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.environment.set('profileId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileName\": \"Bridal Fit\",\n  \"measurementDate\": \"2026-07-20\",\n  \"unit\": \"INCHES\",\n  \"notes\": \"Wearing 2 inch heels\",\n  \"isCurrent\": true,\n  \"values\": [\n    { \"measurementType\": \"BUST\", \"value\": 36.0 },\n    { \"measurementType\": \"WAIST\", \"value\": 28.0 },\n    { \"measurementType\": \"HIP\", \"value\": 38.0 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/measurements",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Measurement Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/measurements/{{profileId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Measurement Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"profileName\": \"Bridal Fit — Updated\",\n  \"measurementDate\": \"2026-07-20\",\n  \"unit\": \"INCHES\",\n  \"notes\": \"Wearing 3 inch heels\",\n  \"values\": [\n    { \"measurementType\": \"BUST\", \"value\": 36.5 },\n    { \"measurementType\": \"WAIST\", \"value\": 28.0 },\n    { \"measurementType\": \"HIP\", \"value\": 38.0 }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/admin/measurements/{{profileId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Set Current Profile",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/measurements/{{profileId}}/set-current",
+            "description": "Phase 3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Quotes",
+      "item": [
+        {
+          "name": "List Quotes for Appointment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/quotes",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.id) pm.environment.set('quoteId', json.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garmentId\": \"{{garmentId}}\",\n  \"currency\": \"USD\",\n  \"materialFee\": 0.00,\n  \"rushFee\": 15.00,\n  \"discountAmount\": 0.00,\n  \"taxAmount\": 0.00,\n  \"customerMessage\": \"Includes rush service fee.\",\n  \"lineItems\": [\n    {\n      \"alterationId\": null,\n      \"description\": \"Dress hem — 1 inch\",\n      \"quantity\": 1,\n      \"unitPrice\": 45.00\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/admin/appointments/{{appointmentId}}/quotes",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Quote",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/quotes/{{quoteId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Quote (draft)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"garmentId\": \"{{garmentId}}\",\n  \"materialFee\": 5.00,\n  \"rushFee\": 15.00,\n  \"discountAmount\": 0.00,\n  \"taxAmount\": 0.00,\n  \"customerMessage\": \"Updated quote with material fee.\",\n  \"lineItems\": [\n    {\n      \"description\": \"Dress hem — 1 inch\",\n      \"quantity\": 1,\n      \"unitPrice\": 45.00\n    },\n    {\n      \"description\": \"Lining adjustment\",\n      \"quantity\": 1,\n      \"unitPrice\": 20.00\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/admin/quotes/{{quoteId}}",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Send Quote",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/quotes/{{quoteId}}/send",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Revise Quote",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/admin/quotes/{{quoteId}}/revise",
+            "description": "Phase 3."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Communication",
+      "item": [
+        {
+          "name": "List Communications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/customers/{{customerId}}/communications",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "Log Communication",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"customerId\": \"{{customerId}}\",\n  \"appointmentId\": \"{{appointmentId}}\",\n  \"garmentId\": null,\n  \"communicationType\": \"WHATSAPP\",\n  \"direction\": \"OUTBOUND\",\n  \"subject\": null,\n  \"messageSummary\": \"Requested photo of shoes for hem length.\",\n  \"customerVisible\": false,\n  \"occurredAt\": \"2026-07-22T11:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/communications",
+            "description": "Phase 3."
+          },
+          "response": []
+        },
+        {
+          "name": "WhatsApp Deep Link",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/communications/whatsapp-link?customerId={{customerId}}&appointmentId={{appointmentId}}&template=REQUEST_PHOTO",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "communications", "whatsapp-link"],
+              "query": [
+                { "key": "customerId", "value": "{{customerId}}" },
+                { "key": "appointmentId", "value": "{{appointmentId}}" },
+                { "key": "template", "value": "REQUEST_PHOTO" }
+              ]
+            },
+            "description": "Phase 4."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Files",
+      "item": [
+        {
+          "name": "Presign Upload",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const json = pm.response.json();",
+                  "    if (json.fileAssetId) pm.environment.set('fileAssetId', json.fileAssetId);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileName\": \"dress-front.jpg\",\n  \"mimeType\": \"image/jpeg\",\n  \"fileSizeBytes\": 2048000,\n  \"resourceType\": \"GARMENT_PHOTO\",\n  \"garmentId\": \"{{garmentId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/files/presign",
+            "description": "Phase 4."
+          },
+          "response": []
+        },
+        {
+          "name": "Confirm Upload",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fileAssetId\": \"{{fileAssetId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/admin/files/confirm",
+            "description": "Phase 4."
+          },
+          "response": []
+        },
+        {
+          "name": "Get File Metadata",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/admin/files/{{fileAssetId}}",
+            "description": "Phase 4."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete File",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/admin/files/{{fileAssetId}}",
+            "description": "Phase 4. Soft delete."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Audit",
+      "item": [
+        {
+          "name": "List Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/audit-logs?entityType=APPOINTMENT&entityId={{appointmentId}}&page=0&size=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "audit-logs"],
+              "query": [
+                { "key": "entityType", "value": "APPOINTMENT" },
+                { "key": "entityId", "value": "{{appointmentId}}" },
+                { "key": "page", "value": "0" },
+                { "key": "size", "value": "20" }
+              ]
+            },
+            "description": "Phase 5."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

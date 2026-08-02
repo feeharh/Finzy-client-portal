@@ -225,7 +225,8 @@ appointment_number	VARCHAR(30)	Not null, unique	Customer-facing reference
 customer_id	UUID	Foreign key, not null	Customer who owns the appointment
 appointment_type	VARCHAR(50)	Not null	Appointment category
 status	VARCHAR(50)	Not null	Current appointment status
-preferred_start_at	TIMESTAMPTZ	Nullable	Customer's preferred date and time
+preferred_start_at	TIMESTAMPTZ	Nullable	Customer's preferred visit date and time
+preferred_completion_date	DATE	Nullable	Customer's preferred completion or pickup date
 scheduled_start_at	TIMESTAMPTZ	Nullable	Confirmed appointment start
 scheduled_end_at	TIMESTAMPTZ	Nullable	Confirmed appointment end
 service_description	TEXT	Nullable	Customer-provided service description
@@ -263,7 +264,8 @@ Business Rules
 An appointment must belong to exactly one customer.
 One appointment may contain multiple garments.
 An appointment is not confirmed until its status is APPROVED.
-Calendar links are available only for approved appointments with confirmed scheduling information.
+preferred_start_at represents when the customer wants to visit; preferred_completion_date represents when they want the work completed or picked up. These are independent fields.
+Calendar links are available only for approved appointments with confirmed scheduling information (scheduled_start_at / scheduled_end_at).
 Status changes must create an appointment-status-history record.
 Completed and cancelled appointments remain in historical records.
 5.5 Appointment Status History
